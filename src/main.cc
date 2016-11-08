@@ -93,8 +93,7 @@ int main(int argc, char *argv[]) {
             return 1;
         }
 
-    spdlog::set_async_mode(8192, spdlog::async_overflow_policy::block_retry,
-                           nullptr, std::chrono::minutes(1));
+    spdlog::set_async_mode(8192);
 
     try {
         std::vector<spdlog::sink_ptr> sinks{
