@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
 
     const std::string quote_command = "/quote@" + username;
     const std::string joke_command = "/joke@" + username;
-    const std::string funny_pics_command = "/funny_pics_command@" + username;
+    const std::string funny_pics_command = "/funny_pics@" + username;
     const std::string about_command = "/about@" + username;
 
     spdlog::get("logger")->info("🤖️ @{} is running 😉", username);
