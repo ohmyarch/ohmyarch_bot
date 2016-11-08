@@ -6,10 +6,9 @@ arch:
     - cpprestsdk-git
     - nlohmann_json-git
   script:
-    - "mkdir -p build"
-    - "cd build"
-    - "cmake .. -DCMAKE_BUILD_TYPE=Release"
-    - "cd ../bin"
+    - "cmake -DCMAKE_BUILD_TYPE=Release"
+    - "make"
+    - "cd bin"
     - "./ohmyarch_bot --help"
 
 script:
