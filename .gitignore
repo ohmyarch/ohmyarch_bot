@@ -1,0 +1,14 @@
+bin/
+build/
+
+# Dolphin
+.directory
+
+# Visual Studio Code
+.vscode/
+
+# Kdevelop
+.kdev4/
+
+# Qt Creator
+CMakeLists.txt.user

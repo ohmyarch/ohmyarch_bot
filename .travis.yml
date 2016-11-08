@@ -1,0 +1,16 @@
+sudo: required
+
+arch:
+  packages:
+    - spdlog-git
+    - cpprestsdk-git
+    - nlohmann_json-git
+  script:
+    - "mkdir -p build"
+    - "cd build"
+    - "cmake .. -DCMAKE_BUILD_TYPE=Release"
+    - "cd ../bin"
+    - "./ohmyarch_bot --help"
+
+script:
+  - "curl -s https://raw.githubusercontent.com/mikkeloscar/arch-travis/master/arch-travis.sh | bash"
