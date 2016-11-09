@@ -10,14 +10,13 @@
 #include <spdlog/spdlog.h>
 
 namespace ohmyarch {
-static std::mt19937_64
-    engine((std::random_device().operator()()));
+static std::mt19937_64 engine((std::random_device().operator()()));
 
 std::experimental::optional<std::vector<std::string>> get_funny_pics() {
     std::uniform_int_distribution<int> gen_page_index(1, 300);
 
     web::uri_builder builder(
-        "http://jandan.net/?oxwlxojflwblxbsapi=jandan.get_pic_comments");
+        "http://i.jandan.net/?oxwlxojflwblxbsapi=jandan.get_pic_comments");
     builder.append_query("page", gen_page_index(engine));
 
     web::http::client::http_client client(builder.to_uri());
