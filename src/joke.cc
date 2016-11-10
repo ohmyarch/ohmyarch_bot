@@ -37,7 +37,7 @@ std::experimental::optional<std::string> get_joke() {
             .at(gen_comment_index(engine))
             .at("text_content");
     } catch (const std::exception &error) {
-        spdlog::get("logger")->error("get_joke: {}", error.what());
+        spdlog::get("logger")->error("❌ get_joke: {}", error.what());
 
         return {};
     }

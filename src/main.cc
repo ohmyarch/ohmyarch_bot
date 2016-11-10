@@ -6,6 +6,7 @@
 
 #include "config.h"
 #include "funny_pics.h"
+#include "girl_pics.h"
 #include "joke.h"
 #include "message.h"
 #include "quote.h"
@@ -123,6 +124,7 @@ int main(int argc, char *argv[]) {
     const std::string quote_command = "/quote@" + username;
     const std::string joke_command = "/joke@" + username;
     const std::string funny_pics_command = "/funny_pics@" + username;
+    const std::string girl_pics_command = "/girl_pics@" + username;
     const std::string about_command = "/about@" + username;
 
     spdlog::get("logger")->info("🤖️ @{} is running 😉", username);
@@ -193,6 +195,27 @@ int main(int argc, char *argv[]) {
                                             if (funny_pics)
                                                 for (const auto &pic_uri :
                                                      funny_pics.value()) {
+                                                    if (boost::ends_with(
+                                                            pic_uri, "gif"))
+                                                        ohmyarch::send_document(
+                                                            chat_id, pic_uri);
+                                                    else
+                                                        ohmyarch::send_message(
+                                                            chat_id, pic_uri);
+                                                }
+                                        });
+                                } else if (bot_command == "/girl_pics" ||
+                                           bot_command == girl_pics_command) {
+                                    boost::async(ohmyarch::get_girl_pics)
+                                        .then([chat_id = message->chat().id()](
+                                            boost::unique_future<
+                                                std::experimental::optional<
+                                                    std::vector<std::string>>>
+                                                task) {
+                                            const auto girl_pics = task.get();
+                                            if (girl_pics)
+                                                for (const auto &pic_uri :
+                                                     girl_pics.value()) {
                                                     if (boost::ends_with(
                                                             pic_uri, "gif"))
                                                         ohmyarch::send_document(

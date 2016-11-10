@@ -27,7 +27,7 @@ std::experimental::optional<quote> get_quote() {
 
         return quote(json.at("quoteAuthor"), json.at("quoteText"));
     } catch (const std::exception &error) {
-        spdlog::get("logger")->error("get_quote: {}", error.what());
+        spdlog::get("logger")->error("❌ get_quote: {}", error.what());
 
         return {};
     }

@@ -4,7 +4,7 @@
 // license information.
 //
 
-#include "funny_pics.h"
+#include "girl_pics.h"
 #include <cpprest/http_client.h>
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
@@ -12,11 +12,11 @@
 namespace ohmyarch {
 static std::mt19937_64 engine((std::random_device().operator()()));
 
-std::experimental::optional<std::vector<std::string>> get_funny_pics() {
+std::experimental::optional<std::vector<std::string>> get_girl_pics() {
     std::uniform_int_distribution<int> gen_page_index(1, 300);
 
     web::uri_builder builder(
-        "http://i.jandan.net/?oxwlxojflwblxbsapi=jandan.get_pic_comments");
+        "http://i.jandan.net/?oxwlxojflwblxbsapi=jandan.get_ooxx_comments");
     builder.append_query("page", gen_page_index(engine));
 
     web::http::client::http_client client(builder.to_uri());
@@ -46,7 +46,7 @@ std::experimental::optional<std::vector<std::string>> get_funny_pics() {
 
         return pics;
     } catch (const std::exception &error) {
-        spdlog::get("logger")->error("❌ get_funny_pics: {}", error.what());
+        spdlog::get("logger")->error("❌ get_girl_pics: {}", error.what());
 
         return {};
     }

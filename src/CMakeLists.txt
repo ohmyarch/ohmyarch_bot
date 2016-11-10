@@ -5,6 +5,7 @@ add_executable(ohmyarch_bot
   joke.cc
   quote.cc
   funny_pics.cc
+  girl_pics.cc
   message.cc
   config.cc
 )

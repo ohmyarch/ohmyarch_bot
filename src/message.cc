@@ -32,7 +32,7 @@ std::experimental::optional<std::string> get_me() {
 
         return json.at("result").at("username");
     } catch (const std::exception &error) {
-        spdlog::get("logger")->error("get_me: {}", error.what());
+        spdlog::get("logger")->error("❌ get_me: {}", error.what());
 
         return {};
     }
@@ -107,7 +107,7 @@ std::experimental::optional<std::vector<update>> get_updates() {
 
         return updates;
     } catch (const std::exception &error) {
-        spdlog::get("logger")->error("get_updates: {}", error.what());
+        spdlog::get("logger")->error("❌ get_updates: {}", error.what());
 
         return {};
     }
@@ -123,7 +123,7 @@ void send_message(int64_t chat_id, const std::string &text) {
     try {
         client.request(web::http::methods::GET).get();
     } catch (const web::http::http_exception &error) {
-        spdlog::get("logger")->error("send_message: {}", error.what());
+        spdlog::get("logger")->error("❌ send_message: {}", error.what());
     }
 }
 
@@ -137,7 +137,7 @@ void send_document(int64_t chat_id, const std::string &uri) {
     try {
         client.request(web::http::methods::GET).get();
     } catch (const web::http::http_exception &error) {
-        spdlog::get("logger")->error("send_document: {}", error.what());
+        spdlog::get("logger")->error("❌ send_document: {}", error.what());
     }
 }
 }
