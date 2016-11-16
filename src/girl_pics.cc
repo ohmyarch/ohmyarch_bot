@@ -41,11 +41,11 @@ std::experimental::optional<std::vector<std::string>> get_girl_pics() {
 
         for (int i = 0; i < 25; ++i) {
             comment_index = gen_comment_index(engine);
-            auto &comment = comments_array.at(comment_index);
-            const int oo = comment.at("vote_positive");
-            const int xx = comment.at("vote_negative");
+            const auto &comment = comments_array.at(comment_index);
+            const double oo =std::stod(comment.at("vote_positive").get_ref<const nlohmann::json::string_t &>());
+            const double xx = std::stod(comment.at("vote_negative").get_ref<const nlohmann::json::string_t &>());
 
-            if ((oo + xx) < 50 || (oo / xx) >= 0.618)
+            if ((oo + xx) < 50.0 || (oo / xx) >= 0.618)
                 break;
         }
 
