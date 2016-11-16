@@ -35,8 +35,21 @@ std::experimental::optional<std::vector<std::string>> get_girl_pics() {
 
         std::uniform_int_distribution<int> gen_comment_index(0, 24);
 
-        for (auto &pic :
-             json.at("comments").at(gen_comment_index(engine)).at("pics")) {
+        int comment_index;
+
+        auto &comments_array = json.at("comments");
+
+        for (int i = 0; i < 25; ++i) {
+            comment_index = gen_comment_index(engine);
+            auto &comment = comments_array.at(comment_index);
+            const int oo = comment.at("vote_positive");
+            const int xx = comment.at("vote_negative");
+
+            if ((oo + xx) < 50 || (oo / xx) >= 0.618)
+                break;
+        }
+
+        for (auto &pic : comments_array.at(comment_index).at("pics")) {
             std::string &pic_uri = pic.get_ref<nlohmann::json::string_t &>();
             pic_uri.replace(boost::find_nth(pic_uri, "/", 2).begin() + 1,
                             boost::find_nth(pic_uri, "/", 3).begin(), "large");
