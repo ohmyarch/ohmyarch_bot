@@ -1,4 +1,4 @@
 [Project]
-Name=ohmyarch_bot
+CreatedFrom=CMakeLists.txt
 Manager=KDevCMakeManager
-VersionControl=kdevgit
+Name=ohmyarch_bot

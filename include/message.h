@@ -16,7 +16,7 @@ class chat {
   public:
     chat(chat &&other) noexcept : id_(other.id_) {}
 
-    int64_t id() const { return id_; }
+    std::int64_t id() const { return id_; }
 
     friend class message;
     friend std::experimental::optional<std::vector<update>> get_updates();
@@ -24,7 +24,7 @@ class chat {
   private:
     chat() {}
 
-    int64_t id_;
+    std::int64_t id_;
 };
 
 class message_entity {
@@ -76,7 +76,7 @@ class update {
     update(update &&other) noexcept
         : update_id_(other.update_id_), message_(std::move(other.message_)) {}
 
-    int32_t update_id() const { return update_id_; }
+    std::int32_t update_id() const { return update_id_; }
     const std::experimental::optional<class message> &message() const {
         return message_;
     }
@@ -86,7 +86,7 @@ class update {
   private:
     update() {}
 
-    int32_t update_id_;
+    std::int32_t update_id_;
     std::experimental::optional<class message> message_;
 };
 
@@ -94,7 +94,7 @@ std::experimental::optional<std::string> get_me();
 
 std::experimental::optional<std::vector<update>> get_updates();
 
-void send_message(int64_t chat_id, const std::string &text);
+void send_message(std::int64_t chat_id, const std::string &text);
 
-void send_document(int64_t chat_id, const std::string &uri);
+void send_document(std::int64_t chat_id, const std::string &uri);
 }

@@ -10,20 +10,111 @@
 #include "joke.h"
 #include "message.h"
 #include "quote.h"
+#include <boost/lockfree/spsc_queue.hpp>
 #include <boost/program_options.hpp>
 #include <csignal>
-#include <fstream>
-#include <future>
-#include <iostream>
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
 
-#define BOOST_THREAD_PROVIDES_FUTURE_CONTINUATION
-#include <boost/thread/future.hpp>
+enum class bot_command : std::uint8_t {
+    quote,
+    joke,
+    funny_pics,
+    girl_pics,
+    about
+};
+
+using namespace std::chrono_literals;
+using bot_command_queue =
+    boost::lockfree::spsc_queue<bot_command, boost::lockfree::capacity<100>>;
 
 static std::atomic<bool> keep_running(true);
 
-void signal_handler(int signal) { keep_running = false; }
+static std::unordered_map<std::int64_t, std::shared_ptr<bot_command_queue>>
+    message_queue_map;
+
+static std::mutex map_mutex;
+
+static void signal_handler(int signal) { keep_running = false; }
+
+static void consumer(std::int64_t chat_id,
+                     std::shared_ptr<bot_command_queue> queue) {
+    spdlog::get("logger")->info("ℹ️ thread is created for 💬<{}>",
+                                chat_id);
+
+    std::chrono::time_point<std::chrono::steady_clock> start;
+
+    for (;;) {
+        if (!queue->consume_all([&chat_id, &start](bot_command command) {
+                switch (command) {
+                case bot_command::quote: {
+                    const auto quote = ohmyarch::get_quote();
+                    if (quote)
+                        ohmyarch::send_message(chat_id, quote->text() + " - " +
+                                                            quote->author());
+
+                    break;
+                }
+                case bot_command::joke: {
+                    const auto joke = ohmyarch::get_joke();
+                    if (joke)
+                        ohmyarch::send_message(chat_id, joke.value());
+
+                    break;
+                }
+                case bot_command::funny_pics: {
+                    const auto funny_pics = ohmyarch::get_funny_pics();
+                    if (funny_pics) {
+                        for (const auto &pic_uri : funny_pics.value())
+                            if (boost::ends_with(pic_uri, "gif"))
+                                ohmyarch::send_document(chat_id, pic_uri);
+                            else
+                                ohmyarch::send_message(chat_id, pic_uri);
+                    }
+
+                    break;
+                }
+                case bot_command::girl_pics: {
+                    const auto girl_pics = ohmyarch::get_girl_pics();
+                    if (girl_pics) {
+                        for (const auto &pic_uri : girl_pics.value())
+                            if (boost::ends_with(pic_uri, "gif"))
+                                ohmyarch::send_document(chat_id, pic_uri);
+                            else
+                                ohmyarch::send_message(chat_id, pic_uri);
+                    }
+
+                    break;
+                }
+                case bot_command::about: {
+                    ohmyarch::send_message(
+                        chat_id, "https://github.com/ohmyarch/ohmyarch_bot");
+
+                    break;
+                }
+                }
+
+                start = std::chrono::steady_clock::now();
+            })) {
+            if (std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                              start)
+                    .count() > 10.0) {
+                break;
+            } else {
+                std::this_thread::yield();
+                std::this_thread::sleep_for(100ms);
+            }
+        }
+    }
+
+    {
+        std::lock_guard<std::mutex> guard(map_mutex);
+        message_queue_map.erase(chat_id);
+    }
+
+    spdlog::get("logger")->info("ℹ️ thread is destroyed for 💬<{}>",
+                                chat_id);
+}
 
 int main(int argc, char *argv[]) {
     std::string path_to_config;
@@ -130,13 +221,7 @@ int main(int argc, char *argv[]) {
     spdlog::get("logger")->info("🤖️ @{} is running 😉", username);
     spdlog::get("logger")->flush();
 
-    for (;;) {
-        if (!keep_running) {
-            spdlog::get("logger")->info("🤖️ @{} stopped 😴", username);
-
-            break;
-        }
-
+    while (keep_running) {
         const auto updates = ohmyarch::get_updates();
         if (updates)
             for (const auto &update : updates.value()) {
@@ -144,97 +229,54 @@ int main(int argc, char *argv[]) {
                 if (message) {
                     const auto &entities = message->entities();
                     if (entities) {
+                        const std::int64_t chat_id = message->chat().id();
+
                         std::u16string text =
                             utility::conversions::utf8_to_utf16(
                                 message->text().value());
 
                         for (const auto &entity : entities.value())
                             if (entity.type() == "bot_command") {
-                                const std::string bot_command =
+                                bot_command command;
+
+                                const std::string command_text =
                                     utility::conversions::utf16_to_utf8(
                                         text.substr(entity.offset(),
                                                     entity.length()));
+                                if (command_text == "/quote" ||
+                                    command_text == quote_command)
+                                    command = bot_command::quote;
+                                else if (command_text == "/joke" ||
+                                         command_text == joke_command)
+                                    command = bot_command::joke;
+                                else if (command_text == "/funny_pics" ||
+                                         command_text == funny_pics_command)
+                                    command = bot_command::funny_pics;
+                                else if (command_text == "/girl_pics" ||
+                                         command_text == girl_pics_command)
+                                    command = bot_command::girl_pics;
+                                else if (command_text == "/about" ||
+                                         command_text == about_command)
+                                    command = bot_command::about;
 
-                                if (bot_command == "/quote" ||
-                                    bot_command == quote_command) {
-                                    boost::async(ohmyarch::get_quote)
-                                        .then([chat_id = message->chat().id()](
-                                            boost::unique_future<
-                                                std::experimental::optional<
-                                                    ohmyarch::quote>>
-                                                task) {
-                                            const auto quote = task.get();
-                                            if (quote)
-                                                ohmyarch::send_message(
-                                                    chat_id,
-                                                    quote->text() + " - " +
-                                                        quote->author());
-                                        });
-                                } else if (bot_command == "/joke" ||
-                                           bot_command == joke_command) {
-                                    boost::async(ohmyarch::get_joke)
-                                        .then([chat_id = message->chat().id()](
-                                            boost::unique_future<
-                                                std::experimental::optional<
-                                                    std::string>>
-                                                task) {
-                                            const auto joke = task.get();
-                                            if (joke)
-                                                ohmyarch::send_message(
-                                                    chat_id, joke.value());
-                                        });
-                                } else if (bot_command == "/funny_pics" ||
-                                           bot_command == funny_pics_command) {
-                                    boost::async(ohmyarch::get_funny_pics)
-                                        .then([chat_id = message->chat().id()](
-                                            boost::unique_future<
-                                                std::experimental::optional<
-                                                    std::vector<std::string>>>
-                                                task) {
-                                            const auto funny_pics = task.get();
-                                            if (funny_pics)
-                                                for (const auto &pic_uri :
-                                                     funny_pics.value()) {
-                                                    if (boost::ends_with(
-                                                            pic_uri, "gif"))
-                                                        ohmyarch::send_document(
-                                                            chat_id, pic_uri);
-                                                    else
-                                                        ohmyarch::send_message(
-                                                            chat_id, pic_uri);
-                                                }
-                                        });
-                                } else if (bot_command == "/girl_pics" ||
-                                           bot_command == girl_pics_command) {
-                                    boost::async(ohmyarch::get_girl_pics)
-                                        .then([chat_id = message->chat().id()](
-                                            boost::unique_future<
-                                                std::experimental::optional<
-                                                    std::vector<std::string>>>
-                                                task) {
-                                            const auto girl_pics = task.get();
-                                            if (girl_pics)
-                                                for (const auto &pic_uri :
-                                                     girl_pics.value()) {
-                                                    if (boost::ends_with(
-                                                            pic_uri, "gif"))
-                                                        ohmyarch::send_document(
-                                                            chat_id, pic_uri);
-                                                    else
-                                                        ohmyarch::send_message(
-                                                            chat_id, pic_uri);
-                                                }
-                                        });
-                                } else if (bot_command == "/about" ||
-                                           bot_command == about_command) {
-                                    std::async(ohmyarch::send_message,
-                                               message->chat().id(),
-                                               "https://github.com/ohmyarch/"
-                                               "ohmyarch_bot");
+                                std::unique_lock<std::mutex> lock(map_mutex);
+                                const auto pair = message_queue_map.emplace(
+                                    chat_id,
+                                    std::make_shared<bot_command_queue>());
+                                lock.unlock();
+
+                                auto &queue = pair.first->second;
+                                queue->push(command);
+                                if (pair.second) {
+                                    std::thread consumer_thread(consumer,
+                                                                chat_id, queue);
+                                    consumer_thread.detach();
                                 }
                             }
                     }
                 }
             }
     }
+
+    spdlog::get("logger")->info("🤖️ @{} stopped 😴", username);
 }

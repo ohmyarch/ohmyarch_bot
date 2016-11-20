@@ -14,7 +14,7 @@ find_package(Casablanca REQUIRED)
 find_package(OpenSSL 1.0.0 REQUIRED)
 find_package(spdlog REQUIRED CONFIG)
 find_package(nlohmann_json REQUIRED CONFIG)
-find_package(Boost REQUIRED COMPONENTS system thread program_options)
+find_package(Boost REQUIRED COMPONENTS system program_options)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 

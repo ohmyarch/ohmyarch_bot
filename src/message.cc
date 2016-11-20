@@ -10,7 +10,7 @@
 #include <spdlog/spdlog.h>
 
 namespace ohmyarch {
-static int32_t last_update_id = -1;
+static std::int32_t last_update_id = -1;
 
 std::experimental::optional<std::string> get_me() {
     web::http::client::http_client client(api_uri + "getMe", client_config);
@@ -113,7 +113,7 @@ std::experimental::optional<std::vector<update>> get_updates() {
     }
 }
 
-void send_message(int64_t chat_id, const std::string &text) {
+void send_message(std::int64_t chat_id, const std::string &text) {
     web::uri_builder builder(api_uri + "sendMessage");
     builder.append_query("chat_id", chat_id);
     builder.append_query("text", text);
@@ -127,7 +127,7 @@ void send_message(int64_t chat_id, const std::string &text) {
     }
 }
 
-void send_document(int64_t chat_id, const std::string &uri) {
+void send_document(std::int64_t chat_id, const std::string &uri) {
     web::uri_builder builder(api_uri + "sendDocument");
     builder.append_query("chat_id", chat_id);
     builder.append_query("document", uri);
