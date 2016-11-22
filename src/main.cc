@@ -237,7 +237,8 @@ int main(int argc, char *argv[]) {
 
                         for (const auto &entity : entities.value())
                             if (entity.type() == "bot_command") {
-                                bot_command command;
+                                std::experimental::optional<bot_command>
+                                    command;
 
                                 const std::string command_text =
                                     utility::conversions::utf16_to_utf8(
@@ -259,18 +260,21 @@ int main(int argc, char *argv[]) {
                                          command_text == about_command)
                                     command = bot_command::about;
 
-                                std::unique_lock<std::mutex> lock(map_mutex);
-                                const auto pair = message_queue_map.emplace(
-                                    chat_id,
-                                    std::make_shared<bot_command_queue>());
-                                lock.unlock();
+                                if (command) {
+                                    std::unique_lock<std::mutex> lock(
+                                        map_mutex);
+                                    const auto pair = message_queue_map.emplace(
+                                        chat_id,
+                                        std::make_shared<bot_command_queue>());
+                                    lock.unlock();
 
-                                auto &queue = pair.first->second;
-                                queue->push(command);
-                                if (pair.second) {
-                                    std::thread consumer_thread(consumer,
-                                                                chat_id, queue);
-                                    consumer_thread.detach();
+                                    auto &queue = pair.first->second;
+                                    queue->push(command.value());
+                                    if (pair.second) {
+                                        std::thread consumer_thread(
+                                            consumer, chat_id, queue);
+                                        consumer_thread.detach();
+                                    }
                                 }
                             }
                     }
