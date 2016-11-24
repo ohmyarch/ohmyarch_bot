@@ -68,11 +68,27 @@ std::experimental::optional<std::vector<update>> get_updates() {
             update update;
             update.update_id_ = update_object.at("update_id");
 
+            bool edited = false;
+
             const auto iterator_message = update_object.find("message");
+            const auto iterator_edited_message =
+                update_object.find("edited_message");
+
+            auto iterator = update_object.end();
             if (iterator_message != update_object.end()) {
+                iterator = iterator_message;
+            } else if (iterator_edited_message != update_object.end()) {
+                iterator = iterator_edited_message;
+
+                edited = true;
+            }
+
+            if (iterator != update_object.end()) {
                 message message;
 
-                const auto &message_object = iterator_message.value();
+                const auto &message_object = iterator.value();
+                message.id_ = message_object.at("message_id");
+
                 const auto &chat_object = message_object.at("chat");
                 message.chat_.id_ = chat_object.at("id");
 
@@ -94,7 +110,10 @@ std::experimental::optional<std::vector<update>> get_updates() {
                     message.entities_.emplace(std::move(entities));
                 }
 
-                update.message_.emplace(std::move(message));
+                if (edited)
+                    update.edited_message_.emplace(std::move(message));
+                else
+                    update.message_.emplace(std::move(message));
             }
 
             updates.emplace_back(std::move(update));
@@ -113,16 +132,26 @@ std::experimental::optional<std::vector<update>> get_updates() {
     }
 }
 
-void send_message(std::int64_t chat_id, const std::string &text) {
+void send_message(std::int64_t chat_id, const std::string &text,
+                  std::experimental::optional<std::int32_t> rely_to,
+                  std::experimental::optional<formatting_options> parse_mode) {
     web::uri_builder builder(api_uri + "sendMessage");
     builder.append_query("chat_id", chat_id);
     builder.append_query("text", text);
+    if (parse_mode) {
+        if (parse_mode.value() == formatting_options::markdown_style)
+            builder.append_query("parse_mode", "Markdown");
+        else
+            builder.append_query("parse_mode", "HTML");
+    }
+    if (rely_to)
+        builder.append_query("reply_to_message_id", rely_to.value());
 
     web::http::client::http_client client(builder.to_uri(), client_config);
 
     try {
         client.request(web::http::methods::GET).get();
-    } catch (const web::http::http_exception &error) {
+    } catch (const std::exception &error) {
         spdlog::get("logger")->error("❌ send_message: {}", error.what());
     }
 }
@@ -136,7 +165,7 @@ void send_document(std::int64_t chat_id, const std::string &uri) {
 
     try {
         client.request(web::http::methods::GET).get();
-    } catch (const web::http::http_exception &error) {
+    } catch (const std::exception &error) {
         spdlog::get("logger")->error("❌ send_document: {}", error.what());
     }
 }

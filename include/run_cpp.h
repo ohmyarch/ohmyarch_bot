@@ -4,6 +4,11 @@
 // license information.
 //
 
-#include "news.h"
+#pragma once
 
-namespace ohmyarch{}
+#include <experimental/optional>
+#include <string>
+
+namespace ohmyarch {
+std::experimental::optional<std::string> run_cpp(const std::string &code);
+}

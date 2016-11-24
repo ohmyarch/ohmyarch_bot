@@ -1,6 +1,7 @@
 //
 // Copyright (C) Michael Yang. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// Licensed under the MIT license. See LICENSE file in the project root for full
+// license information.
 //
 
 #pragma once
@@ -10,6 +11,8 @@
 #include <vector>
 
 namespace ohmyarch {
+enum class formatting_options : std::uint8_t { markdown_style, html_style };
+
 class update;
 
 class chat {
@@ -49,9 +52,11 @@ class message_entity {
 class message {
   public:
     message(message &&other) noexcept
-        : chat_(std::move(other.chat_)), text_(std::move(other.text_)),
-          entities_(std::move(other.entities_)) {}
+        : id_(other.id_), chat_(std::move(other.chat_)),
+          text_(std::move(other.text_)), entities_(std::move(other.entities_)) {
+    }
 
+    std::int32_t id() const { return id_; }
     const class chat &chat() const { return chat_; }
     const std::experimental::optional<std::string> &text() const {
         return text_;
@@ -66,6 +71,7 @@ class message {
   private:
     message() {}
 
+    std::int32_t id_;
     class chat chat_;
     std::experimental::optional<std::string> text_;
     std::experimental::optional<std::vector<message_entity>> entities_;
@@ -74,11 +80,15 @@ class message {
 class update {
   public:
     update(update &&other) noexcept
-        : update_id_(other.update_id_), message_(std::move(other.message_)) {}
+        : update_id_(other.update_id_), message_(std::move(other.message_)),
+          edited_message_(std::move(other.edited_message_)) {}
 
     std::int32_t update_id() const { return update_id_; }
     const std::experimental::optional<class message> &message() const {
         return message_;
+    }
+    const std::experimental::optional<class message> &edited_message() const {
+        return edited_message_;
     }
 
     friend std::experimental::optional<std::vector<update>> get_updates();
@@ -88,13 +98,17 @@ class update {
 
     std::int32_t update_id_;
     std::experimental::optional<class message> message_;
+    std::experimental::optional<class message> edited_message_;
 };
 
 std::experimental::optional<std::string> get_me();
 
 std::experimental::optional<std::vector<update>> get_updates();
 
-void send_message(std::int64_t chat_id, const std::string &text);
+void send_message(
+    std::int64_t chat_id, const std::string &text,
+    std::experimental::optional<std::int32_t> rely_to = {},
+    std::experimental::optional<formatting_options> parse_mode = {});
 
 void send_document(std::int64_t chat_id, const std::string &uri);
 }
