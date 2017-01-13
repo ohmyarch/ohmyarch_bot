@@ -68,8 +68,10 @@ static void consumer(std::int64_t chat_id,
                 case bot_command::quote: {
                     const auto quote = ohmyarch::get_quote();
                     if (quote)
-                        ohmyarch::send_message(chat_id, quote->text() + " - " +
-                                                            quote->author());
+                        ohmyarch::send_message(
+                            chat_id,
+                            "_" + quote->text() + " - " + quote->author() + "_",
+                            {}, ohmyarch::formatting_options::markdown_style);
 
                     break;
                 }
