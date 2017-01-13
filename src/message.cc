@@ -124,7 +124,7 @@ std::experimental::optional<std::vector<update>> get_updates() {
 
         last_update_id = updates.back().update_id() + 1;
 
-        return updates;
+        return std::move(updates);
     } catch (const std::exception &error) {
         spdlog::get("logger")->error("❌ get_updates: {}", error.what());
 
