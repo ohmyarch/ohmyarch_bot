@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
     nlohmann::json json;
 
     try {
-        json << config_file;
+        config_file >> json;
 
         ohmyarch::api_uri =
             "https://api.telegram.org/bot" +
@@ -221,11 +221,11 @@ int main(int argc, char *argv[]) {
     spdlog::set_async_mode(8192);
 
     try {
-        std::vector<spdlog::sink_ptr> sinks{
-            std::make_shared<spdlog::sinks::ansicolor_sink>(
-                std::make_shared<spdlog::sinks::stdout_sink_mt>()),
-            std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
-                json.at("log_path"), "txt", 1024 * 1024 * 5, 0)};
+        std::vector<spdlog::sink_ptr> sinks
+        {
+            std::make_shared<spdlog::sinks::ansicolor_stdout_sink_mt>(),
+            std::make_shared<spdlog::sinks::rotating_file_sink_mt>(json.at("log_path"), 1024 * 1024 * 5, 0)
+        };
         auto combined_logger = std::make_shared<spdlog::logger>(
             "logger", sinks.begin(), sinks.end());
         combined_logger->flush_on(spdlog::level::err);
